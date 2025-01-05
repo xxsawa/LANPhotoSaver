@@ -136,6 +136,7 @@
     <Compile Include="FileTransfer\TCPOperations.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WifiMonitoring\TcpConnectionChecker.cs" />
     <Compile Include="WifiMonitoring\WifiService.cs">
       <SubType>Component</SubType>
     </Compile>

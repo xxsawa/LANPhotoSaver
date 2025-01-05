@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using LocalNetworkPhotoSaverService.WifiMonitoring;
 using System.Threading;
+using System.Linq;
 
 namespace LocalNetworkPhotoSaverService
 {
@@ -19,16 +20,18 @@ namespace LocalNetworkPhotoSaverService
         private static int serverPort = 5000;
         private static Application application;
 
-        static void Main(string[] args)
+        static async void Main(string[] args)
         {
             if (args.Length == 1)
             {
                 Console.WriteLine("Running interactively. Press Ctrl+C to exit.");
 
                 Console.WriteLine("Client application started!");
+
+
+                var service = new WifiService();
                 application = new ClinetApplication(serverPort, folderDirectory);
-                var service = new WifiService(application);
-                service.StartService();
+                service.StartService(application);
                 FileSystemWatcher watcher = new FileSystemWatcher(folderDirectory);
 
                 watcher.EnableRaisingEvents = true;
@@ -57,7 +60,7 @@ namespace LocalNetworkPhotoSaverService
 public class ClinetApplication: Application
 {
     private int serverPort;
-    private string serverIp = "127.0.0.1"; // IP of the server  192.168.1.16
+    private string serverIp; // IP of the server  192.168.1.37
     private string folderPath;
     public static bool Started { get; private set; }
 
@@ -70,10 +73,9 @@ public class ClinetApplication: Application
 
     public void Start()
     {
-
-        Started = true;
         var foldersPaths = FileOperations.GetFolderContents(folderPath);
-        while (WifiService.ConnectedToRightWifi)
+
+        while (WifiService.ConnectedToRightWifi && Started)
         {
             try
             {
@@ -93,11 +95,22 @@ public class ClinetApplication: Application
                         byte[] fileNameBytes = Encoding.UTF8.GetBytes(fileName);
 
                         TCPOperations.WriteInt(fileNameBytes.Length, networkStream);
+                        Console.WriteLine("file name size in bytes: " + fileNameBytes.Length);
                         TCPOperations.WriteString(fileName, networkStream);
+                        Console.WriteLine(fileName);
                         TCPOperations.WriteInt(fileBytes.Length, networkStream);
-                        networkStream.Write(fileBytes, 0, fileBytes.Length);
+                        Console.WriteLine("file size in bytes: " + fileBytes.Length);
 
+                        //Chunking 
+                        for (int fileChunk = 0; fileChunk <= (fileBytes.Length / UInt16.MaxValue); fileChunk++)
+                        {
+                            var tempFileBytes = fileBytes.Skip(fileChunk * UInt16.MaxValue).Take(UInt16.MaxValue).ToArray();
+                            Console.WriteLine($"Sending {tempFileBytes.Length} bytes");
+                            networkStream.Write(tempFileBytes, 0, tempFileBytes.Length);
+                        }
                     }
+                    Started = false;
+
                 }
             }
             catch (Exception ex)
@@ -105,11 +118,11 @@ public class ClinetApplication: Application
                 Console.WriteLine($"Error: {ex.Message}");
                 if (WifiService.ConnectedToRightWifi)
                 {
-                    Thread.Sleep(600000);
+                    Thread.Sleep(100);
                 }
             }
         }
-        Started = false;
+        
     }
 }
 
@@ -149,14 +162,33 @@ public class ServerApplication: Application
                     for (int i = 0; i < uniquePhotosPaths.Count; i++)
                     {
                         int fileNameLength = TCPOperations.ReadInt(networkStream);
-                        if (fileNameLength == 0) break;
+                        Console.WriteLine($"fileNameLength {fileNameLength}");
                         string fileName = TCPOperations.ReadString(networkStream);
-
+                        Console.WriteLine(fileName);
                         int fileLength = TCPOperations.ReadInt(networkStream);
-                        byte[] fileBytes = new byte[fileLength];
-                        networkStream.Read(fileBytes, 0, fileLength);
+                        Console.WriteLine($"fileLength {fileLength}");
+
+                        //Chunking 
+                        List<byte> fileBytes = new List<byte>();
+
+                        int chunkSize = fileLength / UInt16.MaxValue;
+                        Console.WriteLine($"Number of chunks {chunkSize} when subtracted from whoel {fileLength - chunkSize * UInt16.MaxValue}");
+                        for (int fileChunk = 0; fileChunk <= chunkSize; fileChunk++)
+                        {
+                            if (fileChunk == chunkSize)
+                            {
+                                var _tempFileBytes = new byte[fileLength - chunkSize * UInt16.MaxValue];
+                                networkStream.Read(_tempFileBytes, 0, _tempFileBytes.Length);
+                                fileBytes.AddRange(_tempFileBytes);
+                                break;
+                            }
+                            var tempFileBytes = new byte[UInt16.MaxValue];
+                            networkStream.Read(tempFileBytes, 0, tempFileBytes.Length);
+                            fileBytes.AddRange(tempFileBytes);
+                        }
                         string filePath = Path.Combine(saveDirectory, fileName);
-                        File.WriteAllBytes(filePath, fileBytes);
+                        Console.WriteLine($"{filePath}");
+                        File.WriteAllBytes(filePath, fileBytes.ToArray());
                         File.SetCreationTime(filePath, DateTime.ParseExact(uniquePhotosPaths[i].CreatedAt, "yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
                         FileOperations.AddPhotoToSaved(uniquePhotosPaths[i]);
                     }

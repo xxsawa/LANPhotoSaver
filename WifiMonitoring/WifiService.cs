@@ -2,23 +2,24 @@
 using System.Net.NetworkInformation;
 using System.ServiceProcess;
 using System.Diagnostics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LocalNetworkPhotoSaverService.WifiMonitoring
 {
-    public class WifiService : ServiceBase
+    internal class WifiService : ServiceBase
     {
         private const string TargetWifiName = "ZTE-5USG79"; // Replace with your Wi-Fi SSID
         private Application Application;
         public static bool ConnectedToRightWifi { get; set; }
 
-        public WifiService(Application application)
+        public WifiService()
         {
-            Application = application;
             ServiceName = "WifiMonitoringService";
         }
 
-        public void StartService()
+        public void StartService(Application application)
         {
+            Application = application;
             OnStart(null);
         }
 
@@ -83,6 +84,40 @@ namespace LocalNetworkPhotoSaverService.WifiMonitoring
 
         private string GetCurrentWifiSSID()
         {
+
+            string output = GetNetShInfo();
+
+            string ssid = null;
+            foreach (var line in output.Split('\n'))
+            {
+                if (line.Contains("SSID"))
+                {
+                    ssid = line.Split(':')[1].Trim();
+                    break;
+                }
+            }
+            return ssid;
+
+        }
+
+        public string GetCurrentWifiIPv4()
+        {
+            string output = GetNetShInfo();
+
+            string ipAddress = null;
+            foreach (var line in output.Split('\n'))
+            {
+                if (line.Contains("IP Address"))
+                {
+                    ipAddress = line.Split(':')[1].Trim();
+                    break;
+                }
+            }
+            return ipAddress;
+        }
+
+        private string GetNetShInfo()
+        {
             try
             {
                 // Execute the netsh command to get current Wi-Fi details
@@ -98,17 +133,17 @@ namespace LocalNetworkPhotoSaverService.WifiMonitoring
                     string output = process.StandardOutput.ReadToEnd();
                     process.WaitForExit();
 
-                    // Parse the SSID from the output
-                    string ssid = null;
-                    foreach (var line in output.Split('\n'))
-                    {
-                        if (line.Contains("SSID"))
-                        {
-                            ssid = line.Split(':')[1].Trim();
-                            break;
-                        }
-                    }
-                    return ssid;
+                    process.StartInfo.FileName = "netsh";
+                    process.StartInfo.Arguments = "interface ip show address";
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = true;
+                    process.Start();
+
+                    output += process.StandardOutput.ReadToEnd();
+                    process.WaitForExit();
+
+                    return output;
                 }
             }
             catch (Exception ex)
@@ -117,5 +152,7 @@ namespace LocalNetworkPhotoSaverService.WifiMonitoring
             }
             return null;
         }
+
+
     }
 }

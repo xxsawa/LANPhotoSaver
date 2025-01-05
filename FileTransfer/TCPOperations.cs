@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 
 namespace LocalNetworkPhotoSaverService.FileTransfer
@@ -33,7 +34,18 @@ namespace LocalNetworkPhotoSaverService.FileTransfer
         public static int ReadInt(NetworkStream networkStream)
         {
             byte[] intBytes = new byte[sizeof(int)];
-            networkStream.Read(intBytes, 0, intBytes.Length);
+            int totalBytesRead = 0;
+
+            while (totalBytesRead < intBytes.Length)
+            {
+                int bytesRead = networkStream.Read(intBytes, totalBytesRead, intBytes.Length - totalBytesRead);
+                if (bytesRead == 0)
+                {
+                    throw new IOException("Network stream closed before all bytes could be read.");
+                }
+                totalBytesRead += bytesRead;
+            }
+
             return BitConverter.ToInt32(intBytes, 0);
         }
     }
