@@ -1,25 +1,29 @@
-﻿using System;
+﻿using LocalNetworkPhotoSaverService.Applictations;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.ServiceProcess;
-using System.Diagnostics;
-using static System.Net.Mime.MediaTypeNames;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace LocalNetworkPhotoSaverService.WifiMonitoring
 {
     internal class WifiService : ServiceBase
     {
-        private const string TargetWifiName = "ZTE-5USG79"; // Replace with your Wi-Fi SSID
-        private Application Application;
+         private const string TargetWifiName = "ZTE-5USG79"; // Replace with your Wi-Fi SSID
+        private IApplication Application;
         public static bool ConnectedToRightWifi { get; set; }
 
-        public WifiService()
+        public WifiService(IApplication application)
         {
+            Application = application;
             ServiceName = "WifiMonitoringService";
         }
 
-        public void StartService(Application application)
+        public void StartService()
         {
-            Application = application;
             OnStart(null);
         }
 
@@ -69,7 +73,7 @@ namespace LocalNetworkPhotoSaverService.WifiMonitoring
                 {
                     Console.WriteLine("Connected to home Wifi!");
                     ConnectedToRightWifi = true;
-                    Application.Start();
+                    Application.SyncFiles();
                 }
                 else
                 {
