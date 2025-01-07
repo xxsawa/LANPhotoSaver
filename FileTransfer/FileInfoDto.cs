@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LocalNetworkPhotoSaverService.FileTransfer
 {
-    internal class FileInfoDto
+    public class FileInfoDto
     {
         public String Path {  get; set; }
         public String CreatedAt { get; set; }

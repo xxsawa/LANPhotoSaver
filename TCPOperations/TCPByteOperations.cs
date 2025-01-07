@@ -4,7 +4,7 @@ using System.Net.Sockets;
 
 namespace LocalNetworkPhotoSaverService.FileTransfer
 {
-    internal class TCPOperations
+    internal class TCPByteOperations
     {
         public static void WriteString(string inputData, NetworkStream networkStream)
         {

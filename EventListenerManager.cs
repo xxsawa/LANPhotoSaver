@@ -3,11 +3,11 @@ using LocalNetworkPhotoSaverService.WifiMonitoring;
 using System.IO;
 namespace LocalNetworkPhotoSaverService
 {
-    internal class EventManager
+    internal class EventListenerManager
     {
         private readonly IApplication application;
         private readonly string folderDirectory;
-        public EventManager(IApplication clinetApplication, string folderDirectory)
+        public EventListenerManager(IApplication clinetApplication, string folderDirectory)
         {
             this.application = clinetApplication;
             this.folderDirectory = folderDirectory;
@@ -27,6 +27,12 @@ namespace LocalNetworkPhotoSaverService
             {
                 this.application.SyncFiles();
             }
+        }
+
+        public void AddWifiChangeEventListener()
+        {
+            var wifiService = new WifiService(application);
+            wifiService.StartService();
         }
     }
 }

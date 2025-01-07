@@ -131,17 +131,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Applictations\CommonHelper.cs" />
     <Compile Include="Applictations\ClientApplication.cs" />
     <Compile Include="Applictations\IApplication.cs" />
-    <Compile Include="EventManager.cs" />
+    <Compile Include="EventListenerManager.cs" />
     <Compile Include="FileTransfer\FileOperations.cs" />
     <Compile Include="FileTransfer\FileInfoDto.cs" />
-    <Compile Include="FileTransfer\TCPOperations.cs" />
+    <Compile Include="TCPOperations\TCPByteOperations.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Applictations\ServerApplication.cs" />
     <Compile Include="StandardMessages.cs" />
-    <Compile Include="WifiMonitoring\TcpConnectionChecker.cs" />
+    <Compile Include="TCPOperations\TcpConnectionChecker.cs" />
     <Compile Include="WifiMonitoring\WifiService.cs">
       <SubType>Component</SubType>
     </Compile>

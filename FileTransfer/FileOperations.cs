@@ -3,13 +3,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace LocalNetworkPhotoSaverService.FileTransfer
 {
     internal class FileOperations
     {
-        private static ConcurrentDictionary<string,int> savedPhotos;
+        private static ConcurrentDictionary<string, int> savedPhotos;
         private static string[] imageExtensions = { ".jpg", ".jpeg", ".png" };
         public static List<FileInfoDto> GetFolderContents(string path)
         {
@@ -20,7 +21,7 @@ namespace LocalNetworkPhotoSaverService.FileTransfer
             foreach (string fileName in fileEntries)
             {
                 FileInfo fileInfo = new FileInfo(fileName);
-                fileDtos.Add(new FileInfoDto { Path = fileName, CreatedAt = fileInfo.CreationTime.ToString("yyyy-MM-ddTHH:mm:ss")});
+                fileDtos.Add(new FileInfoDto { Path = fileName, CreatedAt = fileInfo.CreationTime.ToString("yyyy-MM-ddTHH:mm:ss") });
             }
 
             return fileDtos;
@@ -34,7 +35,7 @@ namespace LocalNetworkPhotoSaverService.FileTransfer
 
             Parallel.ForEach(incomingPhotos, item =>
             {
-                if(!savedPhotos.ContainsKey(item.CreatedAt + Path.GetFileName(item.Path)))
+                if (!savedPhotos.ContainsKey(item.CreatedAt + Path.GetFileName(item.Path)))
                 {
                     foundItems.Add(item);
                 }
@@ -44,7 +45,8 @@ namespace LocalNetworkPhotoSaverService.FileTransfer
         }
 
 
-        private static void initSavedPhotosDatabase(string saveDirectory) {
+        private static void initSavedPhotosDatabase(string saveDirectory)
+        {
             if (savedPhotos == null)
             {
                 savedPhotos = new ConcurrentDictionary<string, int>();
@@ -65,5 +67,13 @@ namespace LocalNetworkPhotoSaverService.FileTransfer
             savedPhotos.TryAdd(fileInfo.CreatedAt + Path.GetFileName(fileInfo.Path), 0);
         }
 
+        public static void SavePhotoToDirectory(byte[] fileBytes, FileInfoDto file, string saveDirectory)
+        {
+            string filePath = Path.Combine(saveDirectory, Path.GetFileName(file.Path));
+            Console.WriteLine($"{filePath}");
+            File.WriteAllBytes(filePath, fileBytes);
+            File.SetCreationTime(filePath, DateTime.ParseExact(file.CreatedAt, "yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
+            FileOperations.AddPhotoToSaved(file);
+        }
     }
 }

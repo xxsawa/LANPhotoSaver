@@ -14,7 +14,12 @@ namespace LocalNetworkPhotoSaverService
             if (application is ClientApplication)
                 Console.WriteLine("Client application started!");
             if (application is ServerApplication)
+            {
                 Console.WriteLine("Server application started!");
+                var castedapp  = application as ServerApplication;
+                Console.WriteLine($"Server is listening on port {castedapp.serverPort}...");
+            }
+
         }
     }
 }
