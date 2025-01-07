@@ -33,7 +33,10 @@ A Windows Service project that allows windows machine to send new images in a sp
 
 ---
 
-## Service Lifecycle
+## Client Application Lifecycle
+
+![alt text](https://github.com/xxsawa/LANPhotoSaver/blob/main/doc/Screenshot%202025-01-07%20191747.png?raw=true)
+
 This section explains the lifecycle and steps of the service:
 
 1. **Service Start**:
